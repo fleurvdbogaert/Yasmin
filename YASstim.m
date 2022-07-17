@@ -2,119 +2,136 @@
 % Y. (Yasmin) Ben Azouz 
 % 4559843
 % July 2022 
-
-%% Variables
-DIR_IMPORT = [];        % when desired, set a default directory to select files from, otherwise use = [];
-DIR_EXPORT = [];        % when desired, set a default directory the OUTPUT directory user interface will open up, otherwise use = [];
-mkdir 'Figures'
-mkdir 'Calculations'
-FS_POT = 60000;        % [Hz] sampling frequency
-FS_PRESS = 60000;
-
-%% Input values
-% C = 5111;            % Calibration factor
-% C = 5420;            % calibration factor 150420
-% C = 5859.4;          % Calibration factor 040320
-C_press1 = 0;          % Calibration factor 16022022 = 28725;
-C_press2 = 0;
-
-TX  = 4;                % Amount of seconds of which the declining pressure slope upon inhibition will be calculated (seconds after start inhibition)
-DS_FACT = 2;            % Downsampling factor
-F_FILT = 18;            % [Hz] low-pass filter frequency for pressure 
-
-% Set the number of stimulation blocks for low-frequency and high-frequency separately 
-HF_BLOCKS = 1;
-LF_BLOCKS = 0;
-
-% Determine which pressure channels you want to evaluate
-PRESS1 = 0;
-PRESS2 = 1;
-             
-%% Execute
-[SData, DIR_EXPORT] = load_filesV3(DIR_IMPORT, DIR_EXPORT);
-
-fs_new = FS_POT /  DS_FACT; 
-
-potential1 = SData.potential1;
-pressure2 = SData.pressure2; 
-%%
+%% Figures 
+% %% Variables
+% FS_POT = 60000;        % [Hz] sampling frequency
+% FS_PRESS = 60000;
+% 
+% %% plots 
+% figure(1)
+% plot(xa,a,...
+%     xa(TF),a(TF),'rx') ; 
+% 
+% figure(2)
+% k = 28; 
+% x = linspace(1,length(data{2,k}),length(data{2,k})) ; 
+% xz = linspace(1,length(data{3,k}),length(data{3,k})) ; 
+% figure
+% subplot(2,1,1) ; plot(x,data{2,k}) ; title('raw signal')
+% subplot(2,1,2) ; plot(xz,data{3,k}) ; title ('movstd')
+%% Get stimulation start and end 
 
 ROOT_DIR = uigetdir ; 
 d = dir(fullfile(ROOT_DIR)) ; % and return all those matching files
 d(1:3) = [] ;                 % remove '...', '...' and '.DS.files'
-data = cell(5,numel(d)) ;     % create 3x35 cell array, top names bottom data  
-for i=1:numel(d)
-    data(1,i) = {d(i).name} ; 
-    data(2,i) = {importdata(fullfile(ROOT_DIR,d(i).name)).stimulation(:,1)} ; %take the second (anal) pressure 
+data = cell(5,numel(d)) ;     % create 4x35 cell array,names,raw,data,peak,start,stim 
+for k=1:numel(d)
+    data(1,k) = {d(k).name} ; 
+    data(2,k) = {importdata(fullfile(ROOT_DIR,d(k).name)).stimulation(:,1)} ; %take first stimulation
 
-    absol = abs(data{2,i}) ; 
+    absol = abs(data{2,k}) ; 
 
     m = movstd(absol,10000) ;
-    data(3,i) = {m} ; 
-    data(4,i) = {max(m)-min(m)} ; 
-end 
-%% plot 
-k = 14 ; 
+    data(3,k) = {m} ; 
+    data(4,k) = {std(m)} ; 
 
-figure
-subplot(2,1,1) ; plot(x,data{2,k}) ; title('raw signal')
-subplot(2,1,2) ; plot(x,data{3,k}) ; title ('movstd')
-%% 
-[~,locs] = findpeaks(data{3,k},'MinPeakProminence',30); % 30 is goede threshold voor NoStim
-%%
-% make sure to base of of ONE simulation 
-% removing section where no measurement was done
-if isempty(locs) == 0 
-    % start of measurement not correct 
+     [~,locs] = findpeaks(data{3,k}, ...
+        'MinPeakProminence', (mean(data{3,k}))*3);
+
+    % Remove zeros, they mess with the ranges 
+    if isempty(locs) == 0 
     [zks,~] = find(~data{3,k}(1:locs(1))) ;
-        if issorted(zks) == 1 
-            data(5,k) = {data{3,k}(locs(1):end)} ;
+    n = length(zks) ; 
+    div = (n*(n+1))/2 ; 
+    if zks ~= 0 
+        if isequal(sum(zks), div) 
+            data(3,k) = {data{3,k}(locs(1):end)} ;
         end
-    % end of measurement not correct 
+    end 
+        % end of measurement not correct 
     [fks,~] = find(~data{3,k}(locs(end):end)) ;
-        if issorted(fks,'monotonic') == 1 
-            data(5,k) = {data{3,k}(1:locs(end))} ;
+    f = length(data{3,k}) ; 
+    g = length(data{3,k})-length(fks); 
+    div = (f*(f+1))/2 - (g*(g+1))/2 ; 
+    if fks ~= 0 
+        if isequal(sum(fks), div) 
+            data(3,k) = {data{3,k}(1:locs(end))} ;
         end 
-    % re-calculate peaks 
-    [~,locs] = findpeaks(data{5,k},'MinPeakProminence',30);
-    % re-calculate range 
-    data(4,k) = {max(data{5,k})-min(data{5,k})} ;
-elseif isempty(locs) == 1 
-    % differentiate between stim and nostim through range 
-    if data{4,k} < 10 % boundary for nostim range 
-        % no stimulation given determined
-        % What does this mean for the rest of the calculations? 
-        % Do we leave the stim start and stop empty? 
-    elseif data{4,k} > 10 % boundary for full stim? 
+    end 
+        % re-calculate peaks >> should not find peak as half is removed 
+    [~,locs] = findpeaks(data{3,k}, ...
+        'MinPeakProminence',(mean(data{3,k})*3));
+        % re-calculate range 
+    data(4,k) = {std(m)} ; %{max(data{3,k})-min(data{3,k})} ;
+    end 
+%end 
 
+    % STIM OR NOSTIM
+    if data{4,k} < 10 % boundary for nostim range 
+
+        if isempty(locs) == 1 
+            startstim = [] ; 
+            endstim = [] ; 
+        elseif isempty(locs) == 0 % waarom zou no stim nog een piek hebben? 
+            startstim = [] ; 
+            endstim = [] ;
+        end 
+
+    elseif data{4,k} > 10 % stim present 
+
+        if isempty(locs) == 1 % cont stim 
+            startstim = 1 ;    % beginning stim is one 
+            endstim = length(data{3,k}) ;  % end stim is end 
+
+        elseif isempty(locs) == 0
+            if (rem(length(locs),2) ~= 0)==1
+                % een start heeft links lage std rechts hoge std 
+                % een eind heeft links hoge std links lage std 
+                startstim = zeros((length(locs)+1)/2) ; 
+                endstim = zeros((length(locs)+1)/2) ;
+
+                for l = 1:length(locs)
+                    % Take range of 1000? 
+                    left = abs(data{2,k}(locs(l)-1000:locs(l))) ; 
+                    right = abs(data{2,k}(locs(l):locs(l)+1000)) ; 
+                    for ll = 1:(length(locs)+1)/2
+                        if sum(left) < sum(right) %start 
+                            startstim(ll) = locs(l) ; 
+                        elseif sum(right) < sum(left) %end 
+                            endstim(ll) = locs(l) ; 
+                        end 
+                    end 
+                end 
+            
+
+            % find if start or end had zero >> cannot be both (odd)
+            % missing start is order in ascending order, zero front 
+            % missing end is replace zero with last indice 
+
+                if sum(endstim==0)~=0 
+                    endstim(:,end) = length(data{3,k}) ; 
+                elseif sum(startstim==0)~=0 
+                    sort(startstim) ; 
+                end 
+        % even locs > stim started and ended 
+            elseif (rem(length(locs),2) == 0) ==1
+                startstim = zeros(length(locs)/2) ; 
+                endstim = zeros(length(locs)/2) ;
+
+                for l = 1:length(locs)
+                    % Take range of 500? 
+                    left = abs(data{2,k}(locs(l)-1000:locs(l))) ; 
+                    right = abs(data{2,k}(locs(l):locs(l)+1000)) ; 
+                    for ll = 1:length(locs)/2
+                        if sum(left) < sum(right) %start 
+                            startstim(ll) = locs(l) ; 
+                        elseif sum(right) < sum(left) %end 
+                            endstim(ll) = locs(l) ; 
+                        end 
+                    end 
+                end 
+            end 
+        end 
+        data(5,k) = {[startstim; endstim]} ; 
     end 
 end 
-%%
-xz = linspace(1,length(data{5,k}),length(data{5,k})) ; 
-figure 
-plot(xz,data{5,k},...
-    xz(locs),data{5,k}(locs),'rx') ; 
-%%
-figure(1); 
-xa = linspace(1, length(a), length(a)) ; 
-x = linspace(1, length(potential1), length(potential1)) ;
-subplot(3,1,3) ; plot(xa,a) ; title('differential smooth')
-subplot(3,1,1) ; plot(x,potential1) ; title('unfiltered')
-subplot(3,1,2) ; plot(x,m) ; title ('integral')
-
-%% plot findchangepts
-TF = findchangepts(T,'Statistic','mean','MinThreshold',1000000) ;
- 
-%%
-figure 
-plot(x,T,...
-    x(TF),T(TF),'rx') ; 
-
-    % net_filter = designfilt('bandstopiir','FilterOrder',2, ...                       % create notch filter for 50 Hz (48-52 Hz)
-%                            'HalfPowerFrequency1',49.9,'HalfPowerFrequency2',50.1, ...
-%                            'DesignMethod','butter','SampleRate',fs_new);
-% %fvtool(net_filter, 'FS', fs_new)                                       % Visualize the filter       
-% potential1_filtered = filtfilt(net_filter, potential1);
-%%
-xb = linspace(1, length(b), length(b)) ; 
-plot(xb,b)

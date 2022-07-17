@@ -70,7 +70,7 @@ MiniBatchSize = 30;
 layers = [...
     sequenceInputLayer(numSequence,'Normalization', 'zscore')
     bilstmLayer(numHiddenUnits,'OutputMode','sequence')
-    fullyConnectedLayer(3)
+    fullyConnectedLayer(2)
     softmaxLayer
     classificationLayer];
 
