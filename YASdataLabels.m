@@ -12,6 +12,7 @@ ROOT_DIR = uigetdir ;
 d = dir(fullfile(ROOT_DIR)) ; % and return all those matching files
 d(1:3) = [] ;                 % remove '...', '...' and '.DS.files'
 data = cell(3,numel(d)) ;     % create 3x35 cell array, top names bottom data  
+%%
 for i=1:numel(d)
     data(1,i) = {d(i).name} ; 
     data(2,i) = {importdata(fullfile(ROOT_DIR,d(i).name)).pressure(:,2)} ; %take the second (anal) pressure 
@@ -39,7 +40,7 @@ for i=1:numel(d)
     for ii=1:numel(plocs)
         xline(plocs(ii), 'b', 'LineWidth',2)
 
-        answer = questdlg('Is the green line a contraction peak?', ...
+        answer = questdlg('Is the blue line a contraction peak?', ...
             'Check contractions', ...
             'Keep','Change', 'Delete', 'Keep');
         % Handle response
