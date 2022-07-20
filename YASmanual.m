@@ -2,103 +2,110 @@
 % Y. (Yasmin) Ben Azouz 
 % 4559843
 % July 2022 
-% If the code errors/does not run, all calculations can be done manually. 
-% All detected start and end points will be plotted for accordance and can be adjusted  
+% >>>> If the code errors/does not run, all calculations can be done manually. 
+% All detected start and end points will be plotted for accordance and can be adjusted
 
-%% Plotting and according stimulations 
-t_stim = (0:numel(stim)-1)/(fs_press); % Time vector 
+%% Plotting and according: general 
+%data = cell(4,2) ; % shape of input data 
+tpe = 'pressure' ; 
+% tpe = pressure or stimulation >> add of axis and titles? 
+%%
 
-%% Plotting and according Pressures 
-for i = 1:size(pres,2)
-    if ~isempty(pres{1,n})
-        t_press = (0:numel(pres{2,n})-1)/(fs_press); % Time vector 
+for i = 1:size(data,2)   % loop over all measurements included 
+    if ~isempty(data{1,i}) % if measurements are included
 
-        % figure 
-        figure 
-        h1 = plot(t_press, pres{2,n}, '-b', 'LineWidth', 1);
-        set(gcf, 'Position',  [200, 200, 1000, 400])      % Set the size of the figure to make it more of a rectangular 
-        hold on; 
-        %% ONSET en piek plotten 
-        xline(plocs, 'LineWidth',2);                 % Plot the onset of each contraction as a vertical line 
-        title('Labelling Pressure Peaks'); 
-        ylabel('Pressure [cmH_2O]','FontSize', 10);  
-        xlabel('Time [s]', 'FontSize', 10); 
-    end 
-end 
+        raw = data{1,i} ; % raw data 
+        mod = data{2,i} ; % modified data 
+        pnt = data{3,i} ; % points
+        fs = data{4,1} ; % put sample frequency inside cell with data.
 
- 
-    % Change, keep or delete peaks 
-    for ii=1:numel(plocs)
-        xline(plocs(ii), 'b', 'LineWidth',2)
+        t = (0:numel(raw)-1)/(fs); % Time vector
 
-        answer = questdlg('Is the blue line a contraction peak?', ...
-            'Check contractions', ...
-            'Keep','Change', 'Delete', 'Keep');
-        % Handle response
-        switch answer
-            case 'Keep'
-                xline(plocs(ii), 'g', 'LineWidth', 2)
-            case 'Change'
-                xline(plocs(ii), 'r', 'LineWidth',2)
-                [plocs(ii), ~] = ginput(1); 
-                xline(plocs(ii), 'g', 'LineWidth', 2)
-                disp('Changed contraction')
-            case 'Delete'
-                xline(plocs(ii), 'r', 'LineWidth', 2)
-                plocs(ii) = 0;
-        end    
-    end 
+        % figure  
+           % plot figure 
+            figure 
+            plot(t, mod, '-b', 'LineWidth', 1); % mod data 
+            hold on
+            set(gcf, 'Position',  [200, 200, 1000, 400])      % make a rectangular figure
+        
+        for ii = 1:size(pnt,2) % hoort eigenlijk altijd 2 te zijn, gaat om begin en eind.
+
+           % determine name for pop-ups 
+           if (isequal('stimulation',tpe)) == 1 
+                ylabel('Stimulation Voltage [AU]','FontSize', 10); 
+                if ii == 1 
+                    name = ' STIMULATION START' ; 
+                elseif ii == 2 
+                    name = ' STIMULATION END' ; 
+                end 
+            elseif (isequal('pressure',tpe)) == 1
+                ylabel('Pressure [cmH_2O]','FontSize', 10);
     
-    % Add extra peaks 
-    choicep = 'Yes' ; 
+                if ii == 1 
+                    name = ' CONTRACTION ONSET' ; 
+                elseif ii == 2 
+                    name = ' CONTRACTION PEAK' ; 
+                end 
+           end 
+            
+            xline((pnt(:,ii)/fs), 'LineWidth',2);   % lines 
+            % xline((pnt(:,2)/fs), 'LineWidth',2);   % lines 
+            hold on; % hold state on 
+
+            title(strcat('Labelling',name)); 
+               
+            xlabel('Time [s]', 'FontSize', 10);
+
+            % Change, keep or delete  
+            for iii=1:numel(pnt(:,ii))
+                xline((pnt(iii,ii)/fs), 'b', 'LineWidth',2)
+        
+                answer = questdlg(strcat('Is the blue line a' ...
+                    ,name,'?'), ...
+                    'Change, keep or delete?', ...
+                    'Keep','Change', 'Delete', 'Keep');
+                % Handle response
+                switch answer
+                    case 'Keep'
+                        xline((pnt(iii,ii)/fs), 'g', 'LineWidth', 2)
+                        disp(strcat('Kept',name))
+                    case 'Change'
+                        xline((pnt(iii,ii)/fs), 'r', 'LineWidth',2)
+                        [pnt(iii,ii), ~] = ginput(1); 
+                        xline((pnt(iii,ii)/fs), 'g', 'LineWidth', 2)
+                        disp(strcat('Changed',name))
+                    case 'Delete'
+                        xline((pnt(iii,ii)/fs), 'r', 'LineWidth', 2)
+                        pnt(iii,ii) = 0;
+                        disp(strcat('Deleted',name))
+                end    
+            end 
     
-    while isequal(choicep,'Yes')
-        choicep = questdlg('Do you want to add another peak?', ...
-        'Add contraction peak', ...
-        'Yes','No','No');
-        % Handle response
-        switch choicep
-            case 'Yes'
-                title('Select peak of contraction!');
-                [xn, ~] = ginput(1); 
-                plocs(end+1,:) = xn;
-                xline(xn, '-');
-                disp('Contraction peak added')
-            case 'No'
-                disp('No more contraction peaks added')
-        end    
+            % Add extra  
+            choicep = 'Yes' ; 
+            
+            while isequal(choicep,'Yes')
+                choicep = questdlg(strcat('Do you want to add another' ...
+                    ,name,'?'), ...
+                    'Add extra', ...
+                'Yes','No','No');
+                % Handle response
+                switch choicep
+                    case 'Yes'
+                        title(strcat('Select',name));
+                        [xn, ~] = ginput(1); 
+                        pnt(end+1,ii) = xn;
+                        xline(xn, '-');
+                        disp(strcat('Added',name)) 
+                    case 'No'
+                        disp(strcat('No more',name,' added.'))
+                end    
+            end 
+            hold on ; 
+            new = sort(nonzeros(pnt(:,ii))) ; % remove zeros and sort ascending
+        end 
     end 
-    
-    plocs = sort(nonzeros(plocs)) ; % remove zeros and sort ascending 
-
-    % data(3,i) = {plocs} ; % Add peaks to 3rd data cell 
-
-    % Add onsets
-    choiceon = 'Yes' ; 
-    olocs = zeros(2*numel(plocs),1) ;  % create array twice the size of the peaks for enough space for preallocation
-    on = 0 ; 
-
-    while isequal(choiceon,'Yes')
-        choiceon = questdlg('Do you want to add an onset?', ...
-        'Add contraction onset', ...
-        'Yes','No','No');
-        % Handle response
-        switch choiceon
-            case 'Yes' 
-                title('Select onset of contraction!');
-                [xo, ~] = ginput(1); 
-                on = on+1 ; 
-                olocs(on,:) = xo;
-                xline(xo, '-');
-                disp('Contraction onset added')
-            case 'No'
-                disp('No more contraction onsets added')
-        end    
-    end 
-    olocs = sort(nonzeros(olocs)) ;  % remove zeros and sort ascending 
-    % data(4,i) = {olocs} ; % add onset data to cells 
-
     close 
-
+end 
 
 

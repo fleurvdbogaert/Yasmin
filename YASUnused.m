@@ -1,3 +1,125 @@
+%% Plotting and according stimulations LOS - date: 18.07.2022 
+t_stim = (0:numel(stim)-1)/(fs_stim); % Time vector >> put inside cell with data. 
+
+% slocs = start points 
+% elocs = end points 
+
+%% Plotting and according Pressures LOS - date: 18.07.2022 
+
+% plocs = peak points 
+% olocs = onset points 
+
+for i = 1:size(pres,2) % loop over all pressure measurements included 
+    if ~isempty(pres{1,n}) % if the pressure measurements are included
+        t_press = (0:numel(pres{2,n})-1)/(fs_press); % Time vector 
+
+        % figure 
+        figure 
+        p1 = plot(t_press, pres{2,n}, '-b', 'LineWidth', 1);
+        set(gcf, 'Position',  [200, 200, 1000, 400])      % make a rectangular figure  
+        title('Labelling Pressure Peaks'); 
+        ylabel('Pressure [cmH_2O]','FontSize', 10);  
+        xlabel('Time [s]', 'FontSize', 10);
+
+        hold(p1,'on'); % hold state on 
+        %% pieken plotten 
+        x1 = xline(plocs, 'LineWidth',2);   
+        hold(x1,'on'); % hold state on 
+
+        % Change, keep or delete peaks 
+        for ii=1:numel(plocs)
+            xline(plocs(ii), 'b', 'LineWidth',2)
+    
+            answer = questdlg('Is the blue line a contraction peak?', ...
+                'Check contractions', ...
+                'Keep','Change', 'Delete', 'Keep');
+            % Handle response
+            switch answer
+                case 'Keep'
+                    xline(plocs(ii), 'g', 'LineWidth', 2)
+                case 'Change'
+                    xline(plocs(ii), 'r', 'LineWidth',2)
+                    [plocs(ii), ~] = ginput(1); 
+                    xline(plocs(ii), 'g', 'LineWidth', 2)
+                    disp('Changed contraction')
+                case 'Delete'
+                    xline(plocs(ii), 'r', 'LineWidth', 2)
+                    plocs(ii) = 0;
+            end    
+        end 
+
+        % Add extra peaks 
+        choicep = 'Yes' ; 
+        
+        while isequal(choicep,'Yes')
+            choicep = questdlg('Do you want to add another peak?', ...
+            'Add contraction peak', ...
+            'Yes','No','No');
+            % Handle response
+            switch choicep
+                case 'Yes'
+                    title('Select peak of contraction');
+                    [xn, ~] = ginput(1); 
+                    plocs(end+1,:) = xn;
+                    xline(xn, '-');
+                    disp('Contraction peak added')
+                case 'No'
+                    disp('No more contraction peaks added')
+            end    
+        end 
+    
+        plocs = sort(nonzeros(plocs)) ; % remove zeros and sort ascending 
+        hold(x1,'off') ; % hold state peak lines off 
+        %% onsets plotten
+        x2 = xline(olocs, 'LineWidth',2); % detected onset lines 
+        x3 = xline(plocs, 'g--', 'LineWidth',2) ; % new peak lines 
+        hold([x2 x3],'on'); % hold state on 
+
+        % Change, keep or delete peaks 
+        for ii=1:numel(plocs)
+            xline(plocs(ii), 'b', 'LineWidth',2)
+    
+            answer = questdlg('Is the blue line a contraction onset?', ...
+                'Check contractions', ...
+                'Keep','Change', 'Delete', 'Keep');
+            % Handle response
+            switch answer
+                case 'Keep'
+                    xline(plocs(ii), 'g', 'LineWidth', 2)
+                case 'Change'
+                    xline(plocs(ii), 'r', 'LineWidth',2)
+                    [plocs(ii), ~] = ginput(1); 
+                    xline(plocs(ii), 'g', 'LineWidth', 2)
+                    disp('Changed contraction')
+                case 'Delete'
+                    xline(plocs(ii), 'r', 'LineWidth', 2)
+                    plocs(ii) = 0;
+            end    
+        end
+
+        % Add onsets
+        choiceon = 'Yes' ; 
+    
+        while isequal(choiceon,'Yes')
+            choiceon = questdlg('Do you want to add another onset?', ...
+            'Add contraction onset', ...
+            'Yes','No','No');
+            % Handle response
+            switch choiceon
+                case 'Yes' 
+                    title('Select onset of contraction');
+                    [xo, ~] = ginput(1); 
+                    olocs(end+1,:) = xo;
+                    xline(xo, '-');
+                    disp('Contraction onset added')
+                case 'No'
+                    disp('No more contraction onsets added')
+            end    
+        end 
+        olocs = sort(nonzeros(olocs)) ;  % remove zeros and sort ascending 
+    end 
+end 
+
 %% FIRST TRY STRUCTURE - date: 17.07.2022 
 % findpeaks of moving std 
 [~,locs] = findpeaks(data{3,k},'MinPeakProminence',30); % 30 is (denk ik?) goede threshold voor NoStim
