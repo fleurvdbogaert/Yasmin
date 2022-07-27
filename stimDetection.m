@@ -48,6 +48,9 @@ if m < 10 % boundary for nostim range
     elseif isempty(locs) == 0 % waarom zou no stim nog een piek hebben? 
         startstim = [] ; 
         endstim = [] ;
+    else 
+        startstim = NaN ; 
+        endstim = NaN ; 
     end 
 
 elseif m > 10 % stim present 
@@ -71,7 +74,10 @@ elseif m > 10 % stim present
                     if sum(left) < sum(right) %start 
                         startstim(ll) = locs(l) ; 
                     elseif sum(right) < sum(left) %end 
-                        endstim(ll) = locs(l) ; 
+                        endstim(ll) = locs(l) ;
+                    else 
+                        startstim = NaN ; 
+                        endstim = NaN ; 
                     end 
                 end 
             end 
@@ -85,6 +91,9 @@ elseif m > 10 % stim present
                 endstim(:,end) = length(mov) ; 
             elseif sum(startstim==0)~=0 
                 sort(startstim) ; 
+            else 
+                startstim = NaN ; 
+                endstim = NaN ; 
             end 
     % even locs > stim started and ended 
         elseif (rem(length(locs),2) == 0) ==1
@@ -92,7 +101,7 @@ elseif m > 10 % stim present
             endstim = zeros(length(locs)/2) ;
 
             for l = 1:length(locs)
-                % Take range of 500? 
+                % Take range of 1000? 
                 left = abs(stim(locs(l)-1000:locs(l))) ; 
                 right = abs(stim(locs(l):locs(l)+1000)) ; 
                 for ll = 1:length(locs)/2
@@ -100,12 +109,26 @@ elseif m > 10 % stim present
                         startstim(ll) = locs(l) ; 
                     elseif sum(right) < sum(left) %end 
                         endstim(ll) = locs(l) ; 
+                    else 
+                        startstim = NaN ; 
+                        endstim = NaN ; 
+
+% DIS IS DIT HOE IK DIT WIL WEERGEVEN?? 
+                        disp 'The data cannot pass line 99 of the stimDetection.m file. You will create the start and end of stimulation manually.'
                     end 
                 end 
             end 
+        else 
+            startstim = NaN ; 
+            endstim = NaN ; 
         end 
+    else 
+        startstim = NaN ; 
+        endstim = NaN ; 
     end 
     int_stim = {[startstim; endstim]} ; % put inside cell to move 
+else 
+    int_stim = NaN(1,2); 
 end 
 % end of function
 end 
