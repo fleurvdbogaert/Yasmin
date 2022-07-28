@@ -1,16 +1,16 @@
-%% General Information
-% Y. (Yasmin) Ben Azouz 
-% 4559843
-% July 2022 
-% >>>> If the code errors/does not run, all calculations can be done manually. 
-% All detected start and end points will be plotted for accordance and can be adjusted
+function [newdata] = manualCheck(olddata,tpe)
+% Manually Check if you agree with the automatically found start and end.
+% If the code did not work earlier, you can fully manually add all start
+% and end points here. The new start and end points will be added to the
+% third row of cells and will replace the old found points. If there is a
+% partial start or end, zero or last value will be taken as start or end 
+% respectively.  
+% tpe = type of data, pressure or stimulation 
+% olddata = data with automatically located 
 
-%% Plotting and according: general 
-%data = cell(4,2) ; % shape of input data 
-tpe = 'pressure' ; 
-% tpe = pressure or stimulation >> add of axis and titles? 
-%data = nandata ; 
-%%
+%% Variables 
+data = olddata ; 
+%% Adjusting and according 
 
 for i = 1:size(data,2)   % loop over all measurements included 
 
@@ -183,7 +183,8 @@ if ~isempty(raw) == 1
         man = cat(2,pnt_left,pnt_right) ;
     close 
 end 
+data(3,i) = {man} ; 
 end 
- 
-
+newdata = data ; 
+end
 

@@ -8,7 +8,7 @@ function [stim,pres,dir_outp] = loadModify(au, ds_fact, f_filt, fs_press)
 %% Variables
 fs_new = fs_press / ds_fact;
 
-%% Selet input file and load data 
+%% Select input file and load data 
 [name,path] = uigetfile('*.*') ;
 name = {name} ; 
 data = importdata(fullfile(path,name{1,1})) ;
