@@ -23,7 +23,6 @@ end
 dir_outp = uigetdir(dir_export, 'Select OUTPUT directory');
 
 %% Modify data 
-
 % stimulation 
 num_stim = size(data.stimulation,2) ; % amount of stimulation measurements
 stim = cell(1,num_stim) ;

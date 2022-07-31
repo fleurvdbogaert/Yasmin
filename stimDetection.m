@@ -52,6 +52,7 @@ if m < 10 % boundary for nostim range
         startstim = NaN ; 
         endstim = NaN ; 
     end 
+    int_stim = {[startstim; endstim]} ; % put inside cell to move 
 
 elseif m > 10 % stim present 
 
