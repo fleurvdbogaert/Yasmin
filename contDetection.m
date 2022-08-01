@@ -1,4 +1,4 @@
-function [int_cont] = contDetection(pres)
+function [pres_out] = contDetection(pres_in)
 % Y. (Yasmin) Ben Azouz
 % July 2022 
 % 4559843
@@ -8,8 +8,11 @@ function [int_cont] = contDetection(pres)
 % OUTPUT = 
 %   - int_cont: interval contractions, start and end times 
 
-    for i = 1:size(pres,2) % loop over pressure channels  
-    
+pres = pres_in ; 
+pres_out = pres_in ; 
+
+for i = 1:size(pres,2) % loop over pressure channels  
+    if isempty(pres{1,i})==0 % measurement channel used pressure 
         % Variables 
         mod = pres{2,i} ; 
         fs = pres{3,i} ; 
@@ -48,7 +51,9 @@ function [int_cont] = contDetection(pres)
            endcont = rmmissing(locs_max) ; 
            startcont = nonzeros(startcont) ; 
         end
-        int_cont = {[startcont endcont]} ; 
-    end 
+        int_cont = {[startcont*fs endcont*fs]} ;
+        pres_out(4,i) = int_cont ; 
+    end
+end 
 end
 

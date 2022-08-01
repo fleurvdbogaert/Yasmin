@@ -8,27 +8,27 @@ function [newdata] = manualCheck(olddata,tpe)
 % tpe = type of data, pressure or stimulation 
 % olddata = data with automatically located 
 
-%% Variables 
+
 data = olddata ; 
-%% Adjusting and according 
 
 for i = 1:size(data,2)   % loop over all measurements included 
 
         raw = data{1,i} ; % raw data 
         mod = data{2,i} ; % modified data 
-        pnt = data{3,i} ; % points
-        fs = data{4,1} ; % put sample frequency inside cell with data.
+        fs = data{3,i} ; % put sample frequency inside cell with data.
+        pnt = data{4,i} ; % points
 
-        t = (0:numel(raw)-1)/(fs); % Time vector
 if ~isempty(raw) == 1 
+    
+        t = (0:numel(mod)-1)/(fs); % Time vector
         % figure  
             figure 
-            plot(t, mod, '-b', 'LineWidth', 1); % mod data 
+            plot(t, mod, '-', 'LineWidth', 1, 'Color','#80B3FF'); % mod data 
             hold on
             set(gcf, 'Position',  [200, 200, 1000, 400])      % make a rectangular figure
 
-    if sum(isnan(pnt)) > 1  % if the data did not go through the stim or cont detection
-        for ii = 1:size(pnt,2) % hoort eigenlijk altijd 2 te zijn, gaat om begin en eind. 
+    if sum((sum(isnan(pnt))) > 1)==1 || isempty(pnt) == 1 % if fs the data did not go through the stim or cont detection
+        for ii = 1:2 % hoort eigenlijk altijd 2 te zijn, gaat om begin en eind. 
     
                % determine name for pop-ups 
                if (isequal('stimulation',tpe)) == 1 
@@ -47,6 +47,14 @@ if ~isempty(raw) == 1
                         name = ' CONTRACTION PEAK' ; 
                     end 
                end 
+
+               if isempty(pnt) == 1
+                   disp(['No start and end were detected. ' ...
+                       'Check if this is correct'])
+               elseif sum(isnan(pnt)) > 1
+                   disp(['The code could not pass automatic detection. ' ...
+                       'Please fill out start and end points manually'])
+               end 
           
             % Manual adding  
             choicep = 'Yes' ; 
@@ -61,7 +69,7 @@ if ~isempty(raw) == 1
                     case 'Yes'
                         title(strcat('Select',name));
                         [xn, ~] = ginput(1); 
-                        pnt(end+1,ii) = xn;
+                        pnt(end+1,ii) = xn*fs;
                         xline(xn, '-',name);
                         disp(strcat('Added',name)) 
                     case 'No'
@@ -69,11 +77,15 @@ if ~isempty(raw) == 1
                 end    
             end 
             hold on ; 
-            pnt_left = sort(rmmissing(nonzeros(pnt(:,1)))) ; % remove zeros and sort ascending
-            pnt_right = sort(rmmissing(nonzeros(pnt(:,2)))) ;
+            if ~isempty(pnt) == 1 
+                pnt_left = sort(rmmissing(nonzeros(pnt(:,1)))) ; % remove zeros and sort ascending
+                pnt_right = sort(rmmissing(nonzeros(pnt(:,2)))) ;
+            else                 
+                pnt_left = [] ; % remove zeros and sort ascending
+                pnt_right = [] ;
+            end 
         end 
-            
-        
+       
     elseif (isempty(raw) && sum(sum(isnan(pnt)))) == 0 % if measurements are included (all is filled with [] if not included) 
         for ii = 1:size(pnt,2) % hoort eigenlijk altijd 2 te zijn, gaat om begin en eind. 
                % determine name for pop-ups 
@@ -95,7 +107,6 @@ if ~isempty(raw) == 1
                end 
                 
                 xline((pnt(:,ii)/fs), 'LineWidth',2);   % lines 
-                % xline((pnt(:,2)/fs), 'LineWidth',2);   % lines 
                 hold on; % hold state on 
     
                 title(strcat('Labelling',name)); 
@@ -109,21 +120,24 @@ if ~isempty(raw) == 1
                     answer = questdlg(strcat('Is the blue line a' ...
                         ,name,'?'), ...
                         'Change, keep or delete?', ...
-                        'Keep','Change', 'Delete', 'Keep');
+                        'Keep','Delete', 'Leave Selection', 'Keep');
                     % Handle response
                     switch answer
                         case 'Keep'
                             xline((pnt(iii,ii)/fs), 'g',name, 'LineWidth', 2)
                             disp(strcat('Kept',name))
-                        case 'Change'
-                            xline((pnt(iii,ii)/fs), 'r', 'LineWidth',2)
-                            [pnt(iii,ii), ~] = ginput(1); 
-                            xline((pnt(iii,ii)/fs), 'g',name, 'LineWidth', 2)
-                            disp(strcat('Changed',name))
+%                         case 'Change'
+%                             xline((pnt(iii,ii)/fs), 'r', 'LineWidth',2)
+%                             [pnt(iii,ii), ~] = ginput(1); 
+%                             xline((pnt(iii,ii)/fs), 'g',name, 'LineWidth', 2)
+%                             disp(strcat('Changed',name))
                         case 'Delete'
                             xline((pnt(iii,ii)/fs), 'r', 'LineWidth', 2)
                             pnt(iii,ii) = 0;
                             disp(strcat('Deleted',name))
+                        case 'Leave Selection' 
+                            close all force                            
+                            return  
                     end    
                 end 
         
@@ -140,7 +154,7 @@ if ~isempty(raw) == 1
                         case 'Yes'
                             title(strcat('Select',name));
                             [xn, ~] = ginput(1); 
-                            pnt(end+1,ii) = xn;
+                            pnt(end+1,ii) = xn*fs;
                             xline(xn, '-',name);
                             disp(strcat('Added',name)) 
                         case 'No'
@@ -148,8 +162,14 @@ if ~isempty(raw) == 1
                     end    
                 end 
                 hold on ; 
-                pnt_left = sort(rmmissing(nonzeros(pnt(:,1)))) ; % remove zeros and sort ascending
-                pnt_right = sort(rmmissing(nonzeros(pnt(:,2)))) ;
+
+                if ~isempty(pnt) == 1 
+                    pnt_left = sort(rmmissing(nonzeros(pnt(:,1)))) ; % remove zeros and sort ascending
+                    pnt_right = sort(rmmissing(nonzeros(pnt(:,2)))) ;
+                else                 
+                    pnt_left = [] ; % remove zeros and sort ascending
+                    pnt_right = [] ;
+                end 
         end 
     end 
         %else 
@@ -182,8 +202,10 @@ if ~isempty(raw) == 1
         end             
         man = cat(2,pnt_left,pnt_right) ;
     close 
+else 
+    man = [] ; 
 end 
-data(3,i) = {man} ; 
+data(4,i) = {man} ; 
 end 
 newdata = data ; 
 end

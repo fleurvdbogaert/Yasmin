@@ -14,47 +14,25 @@
 close all; clear; clc;
 
 %% Variables
-% DIR_IMPORT = [];        % when desired, set a default directory to select files from, otherwise use = [];
-% DIR_EXPORT = [];        % when desired, set a default directory the OUTPUT directory user interface will open up, otherwise use = [];
-mkdir 'Figures'
+% mkdir 'Figures' % niet nodig, deze figuren worden niet bekeken 
 mkdir 'Calculations'
-FS_POT = 60000;        % [Hz] sampling frequency
-FS_PRESS = 60000;
+FS_S = 60000;        % [Hz] sampling frequency stimulation
+FS_P = 60000;      % [Hz] sampling frequency pressure  
 
-%% Input values
-C_press1 = 0;         
-C_press2 = 0;
+% pres(2,nn) = {((1.13*(pres{1,nn}))-31.4)/au} ;
 
-TX  = 4;                % Amount of seconds of which the declining pressure slope upon inhibition will be calculated (seconds after start inhibition)
-DS_FACT = 2;            % Downsampling factor
+% DS_FACT = 2;            % Downsampling factor
 F_FILT = 18;            % [Hz] low-pass filter frequency for pressure 
 
-% Set the number of stimulation blocks for low-frequency and high-frequency separately 
-HF_BLOCKS = 1;
-LF_BLOCKS = 0;
-
-% Determine which pressure channels you want to evaluate
-PRESS1 = 0;
-PRESS2 = 1;
-             
-%% Execute
-[SData, DIR_EXPORT] = load_filesV3(DIR_IMPORT, DIR_EXPORT);
-
-fs_new = FS_POT /  DS_FACT; 
-
-potential1 = SData.potential1;
-pressure2 = SData.pressure2; 
-
+%% Execute 
+[STIM,PRES,DIR_OUT] = loadModify(F_FILT,FS_P,FS_S) ;
 %%
-[SData_mod, FS_PRESS] = modifyDataV4(SData, C_press1, C_press2, DS_FACT, FS_PRESS, FS_POT, F_FILT, HF_BLOCKS, LF_BLOCKS, PRESS1, PRESS2);
+[INT_STIM] = stimDetection(STIM) ; 
+%% 
+[INT_PRES] = contDetection(PRES) ; 
+%% 
+[CHCK_STIM] = manualCheck(INT_STIM,'stimulation') ; 
 %%
-plotDataV1(SData_mod,FS_POT, FS_PRESS, C_press1, C_press2);
-%%
-[SData_auto, start_stim, end_stim] = automaticIntervalSelectionV1(SData_mod,FS_POT, FS_PRESS, HF_BLOCKS, LF_BLOCKS, PRESS1, PRESS2);
-%%
-[SData_exp] = calcOutcomeV4(SData_auto, FS_POT, FS_PRESS, TX, HF_BLOCKS, LF_BLOCKS, PRESS1, PRESS2, start_stim, end_stim);
-%%
-exportFuncV4(SData_exp, DIR_EXPORT, PRESS1, PRESS2);
-
-msgbox('Operation Completed','Success')
-disp('Operation completed!')
+[CHCK_PRES] = manualCheck(INT_PRES,'pressure') ; 
+%% 
+[OUT] = calcExport(CHCK_PRES, 'pressure') ; 
