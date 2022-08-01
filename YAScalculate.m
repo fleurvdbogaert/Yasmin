@@ -23,29 +23,31 @@ for i = 1:size(stim,2) % amount of stimulaion channels used
 
             OUTp_ystim = zeros(size(sse)) ; % make an array the same size to fill with heights stim points 
             OUTp_ypres = zeros(size(pse)) ; % make an array the same size to fill with heights pres points
-
-            for s = 1:size(stime,1)
-                OUTp_ystim(s,1) = p_mod(:,stime(s,1)) ; % start stim value pressure 
-                OUTp_ystim(s,2) = p_mod(:,stime(s,2)) ; % end stim value pressure 
                 
                 % Sections stimulations 
                 if OUTnum_stim > 1 % multiple stimulation blocks 
                     if stime(1,1) == 0 % start with stimulation
-                        
-%                         startint = stime(:,2) ; % stim end = int start 
-%                         endint = [stime(2:end,1) t(end)] ; %stim start = int end  
+                        startint = sort(vertcat( ...
+                            stime(:,1),(stime(:,2)+1))) ; 
+                        endint = sort(vertcat( ...
+                            stime(:,2),(stime(2:end,1)-1),t(end))) ; 
+
                         if stime(end) == t(end) % end with stimulation
- 
-%                             startint = stime(1:end-1,2) ; % stim end = int start 
-%                             endint = stime(2:end,1) ; %stim start = int end 
+                            startint = sort(vertcat( ...
+                                stime(:,1),(stime(1:end-1,2)+1))) ;  
+                            endint = sort(vertcat( ...
+                                stime(:,2), stime(2:end,1)-1)) ; 
                         end 
                     elseif stime(end) == t(end) % end with stimulation
-                        
-%                         startint = [0 stime(1:end-1,2)] ; % stim end = int start 
-%                         endint = stime(:,1) ; %stim start = int end  
+                        startint = sort(vertcat( ...
+                            stime(:,1),(stime(1:end-1,2)+1),0)) ; 
+                        endint = sort(vertcat( ...
+                            stime(:,2),(stime(:,1)-1))) ; 
                     else % no partial stimulations
-                        startint = [0 stime(:,2)] ; % stim end = int start 
-                        endint = [stime(:,1) t(end)] ; %stim start = int end              
+                        startint = sort(vertcat( ...
+                            0, stime (:,1), (stime(:,2)+1))); % stim end = int start 
+                        endint = sort(vertcat( ...
+                            stime(:,2),(stime(:,1)-1), t(end))) ; %stim start = int end              
                     end 
                 elseif OUTnum_stim == 1 % one stimulation block
                     if stime(1,1) == 0 
@@ -62,6 +64,9 @@ for i = 1:size(stim,2) % amount of stimulaion channels used
                 end 
                 stim_sect = endint - startint ; % duration
 
+            for s = 1:size(stime,1) % nog gebruiken? de height geeft dit in principe ook aan en daar ga je over heen en het bespaart een loop
+                OUTp_ystim(s,1) = p_mod(:,stime(s,1)) ; % start stim value pressure 
+                OUTp_ystim(s,2) = p_mod(:,stime(s,2)) ; % end stim value pressure 
 
             end 
 %%%%%%%%%%% 1. Number of contractions %%%%%%%%%%
@@ -69,7 +74,6 @@ for i = 1:size(stim,2) % amount of stimulaion channels used
             OUTcont_pm = size(pse,1) / ((size(p_mod,2)/fs)/60); % number of contractions per minute 
 
 %%%%%%%%%%% 2. Duration %%%%%%%%%%
-            % Split into segments based upon start and end times contr. 
 
             % Contractions
             OUTp_dur = (ptime(:,2) - ptime(:,1))/fs ; % durations in samplerate divided by fs gives time axis
@@ -139,11 +143,3 @@ for i = 1:size(stim,2) % amount of stimulaion channels used
     end 
     end 
 end 
-
-
-%% 1. DONE Contractions per minute >> only total amount of contractions? 
-%% 2. DONE Duration contractions >> Include average? 
-%% 3. DONE Time interval between contractions >> include average?
-%% 4. DONE Contraction heights >>> averag e
-%% 5. DONE Steepness contractions >> averga 
-%% 6. DONE Contractions accompanied by voiding 
