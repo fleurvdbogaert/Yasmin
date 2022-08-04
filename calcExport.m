@@ -1,112 +1,109 @@
-function [data_out] = calcExport(data_in, tpe)
+function [T,Tav_pres,Tav_stim] = calcExport(stim,pres)
+  
+% data_out = data ; 
+
+%% Get outcomes 
+for i = 1:size(stim,2) % amount of channels used stimulation
+%     raw = data{1,i} ; 
+%     mdd = data{2,i} ;  
+%     fs = data{3,i} ; 
+%     time = data{4,i} ; 
  
-data = data_in ; 
-data_out = data ; 
+    sraw = stim{1,i} ; 
+    smod = stim{2,i} ; 
+    sfs = stim{3,i} ; 
+    time = stim{4,i} ;
+    smat = stim{5,i} ; 
 
-for i = 1:size(data,2) % amount of channels used 
-    raw = data{1,i} ; 
-    mod = data{2,i} ; 
-    fs = data{3,i} ; 
-    time = data{4,i} ; 
+    t = linspace(1,size(smod,1),size(smod,1)); 
+    tables = cell(1,size(pres,2)) ;
+         
+    for ii = 1:size(pres,2) % amount of channels used pressure 
+        praw = pres{1,ii} ; 
+        pmod = pres{2,ii} ; 
+        pfs = pres{3,ii} ;
+        tme = pres{4,ii} ;
+        pmat = pres{5,i} ; 
 
-    t = linspace(1,size(mod,1),size(mod,1)); 
+%         if ~isempty(mod)
+%             
+%  
+%         elseif isempty(mod)
+%             T = [] ; 
+%             continue 
+%         else 
+%             continue 
+%         end 
+%         
+%         tables(1,ii) = {T} ; %put a table for each pressure measurement within a cell structure 
+% 
+%     end 
+%     data_out(5,i) = {tables} ; %put cell with tables 
+% end 
 
-    if ~isempty(raw) % measurement channel used
+%% contractions within intervals
 
-        %% Get intervals 
-        num = size(time,1); 
-        % Intervals
-        if num > 1
-            if time(1,1) == 0                   % start activation
-                startint = time(:,2)+1 ;        % act end = int start 
-                endint = vertcat(time(2:end,1)-1,t(end)) ; % act start = int end  
-                if time(end) == t(end)          % end with act 
-                    startint = time(1:end-1,2)+1 ; % act end = int start 
-                    endint = time(2:end,1)-1 ;  % act start = int end 
-                end 
-            elseif time(end) == t(end)          % end with act
-                startint = vertcat(1, time(1:end-1,2)+1) ; % act end = int start 
-                endint = time(:,1)-1 ;          % act start = int end  
-            else % no partial activation
-                startint = vertcat(1, time(:,2)+1) ; % act end = int start 
-                endint = vertcat(time(:,1)-1, t(end)) ; % act start = int end              
-            end 
-        elseif num == 1 % single %(:,x) should not be necessary really >> add error? In case it is larger?
-            if time(1,1) == 1 % partial at start 
-                if (time(end)==t(end))==1 || sum(sum(time))==1 % full or none
-                   startint = time(:,1); 
-                   endint = time(:,2) ; 
-                else 
-                   startint = time(:,2)+1 ; 
-                   endint = t(end) ; 
-                end 
-            elseif time(1,2) == t(end) % partial at end 
-                startint = 1 ; 
-                endint = time(:,1)-1 ; 
-            else % no partial
-                startint = vertcat(1, time(:,2)-1) ; 
-                endint = vertcat(time(:,1)+1,t(end)) ; 
-            end 
-        end 
-        %% Outcomes 
-        act = horzcat(ones(size(time,1),1),time) ;
-        int = horzcat(zeros(size(startint,1),1), startint,endint) ;
+start = zeros(size(tme,1),1) ; % size of pressure intervals of only contractions 
+stop = zeros(size(tme,1),1) ;
+
+%contract = zeros(size(smat,1),1); % size of ALL the stimulation intervals 
+condur = cell(size(smat,1),1);
+for ff = 1:size(smat,1) % all stimulation intervals 
+    for f = 1:size(tme,1) % contraction intervals 
         
-        ca = vertcat(act,int) ; 
-        [~,idx] = sort(ca(:,2));            % sort just the first column
-        mat = ca(idx,:);                    % sort the whole matrix using the sort indices
-        
-        start = mat(:,2)/fs ; start(1) = 0;      % 2.start
-        stop = mat(:,3)/fs ;       % 3.stop
-        duration = stop-start/fs ; % 4.duration
-        height = mod(round(mat(:,3)),1) - mod(round(mat(:,2)),1) ; % 5.height  
-        slope = height./duration ;    % 6.slope 
-        
-        mask = start <= t & t <= stop ; %create 7x7200000 array with masks 
-        modnew = repmat(mod,1,size(start,1))' ; %create 7x7200000 matrix with mod 
-        integral = trapz(modnew.*mask,2) ;   % 7. integral: integrate over rows 
-    
-        if isequal(tpe,'pressure')
-        
-            X = {'interval', 'stimulation'} ; %insert label names press 
-            label = X(1+mat(:,1))' ;    % 1. labels pressure 
-        
-            T =  table(label,start,stop, duration, height, slope, integral) ;  
-        elseif isequal(tpe,'stimulation')
-            X = {'interval', 'contraction'} ; 
-            label = X(1+mat(:,1))' ;  % 1. labels stimulation
-            
-            % detect miction
-            mict = p_mod(ptime(k,2)):p_mod(ptime(k,2)+fs); 
-            Y = fft(mict);
-            P2 = abs(Y/fs); % fs = length L 
-            P1 = P2(1:fs/2+1);
-            P1(2:end-1) = 2*P1(2:end-1);
-            f = fs_press*(0:(fs/2))/fs;
-            [~, loc] = findpeaks(P1, f, 'MinPeakHeight',0.5);
-            loc = round(loc);
-            freqs = 8:1:17;
-            c = sum(ismember(loc,freqs));
-               if c ~= 0
-                   miction = 1;
-               else 
-                   miction = 0;
-               end 
-        
-            T =  table(label,start,stop, duration, height, slope, integral, miction) ; 
-        else 
-            % error message? you have not filled out the right tpe 
+        strt = 0; 
+        stp = 0; 
+
+        if (tme(f,1)>= smat(ff,2) && tme(f,1)<= smat(ff,3)) == 1 %als het binen de interval ligt 
+            strt = 1 ; % one value means the start (left) or end (right) of the contraction lies within a stimulation
         end 
 
-    elseif isempty(raw)
-        T = [] ; 
-    else 
-        %error message? your raw data i contains an abnormal value. Klick
-        %... in the workspace, then click the first row of the ith column.
-        %What do you see? 
-    end 
-    data_out(5,i) = {T} ; 
+        if (tme(f,2)>= smat(ff,2) && tme(f,2)<= smat(ff,3)) == 1 %als het binen de interval ligt 
+            stp = 1 ; % one value means the start (left) or end (right) of the contraction lies within a stimulation
+        end 
+            %contract(ff,1) = (round(sum(sum(strt+stp))/2)) ; % automatically rounds up  
+
+            if strt+stp==0 %sum(bet,2)==0  % contraction start and end are not within the ranges  
+                start(f,1) = 0 ; 
+                stop(f,1)= 0 ;
+            elseif strt+stp==1 %sum(bet,2)==1 % contraction start or end is in the interval 
+                start(f,1) = tme(f,1)*strt ;   st = start(f,1); 
+                stop(f,1) = tme(f,2)*stp ; so =stop(f,1) ; 
+
+                st(start==0)=smat(ff,2) ;
+                so(stop==0)=smat(ff,3) ; 
+
+                start(f,1) = st; 
+                stop(f,1) = so ; 
+
+            elseif strt+stp==2 %sum(between,2)==2 % contraction start and end are within the interval 
+                stop(f,1) = tme(f,2) ; 
+                start(f,1) = tme(f,1) ; 
+                % add values same ad above? 
+            end 
+        condur(ff,1) = {[start stop]} ; % start and end times within stim interval 
+        condur(ff,2) = {[tme(f,1) tme(f,2)]} ; % start and end times of the whole contraction
+        condur(ff,3) = {stop-start} ; % duration of the contraction within interval 
+        condur(ff,4) = {tme(f,2)-tme(f,1)} ; %duration of whole contraction 
+        
+        [T,Tav_pres,Tav_stim] = Outcomes(pmod, smat, pmat, condur, pfs) ; 
+    end
+
 end 
+    end 
+end 
+end 
+
+%percdur = duration./condur ; 
+
+%filename = sprintf('%s\\Stimulation information %s %s.xlsx', dir, s.name, datestr(now,'yyyy-mm-dd HH-MM-ss')); % state filename of the output file
+%filename_p = sprintf('%s\\Pressure calculations %s %s.xlsx', dir,s.name, datestr(now,'yyyy-mm-dd HH-MM-ss'));
+%    warning('off','MATLAB:xlswrite:AddSheet'); %optional
+%    writetable(M1,'test.xlsx','Sheet',1);
+%    writetable(M2,'test.xlsx','Sheet',2);
+% end 
+
+%% 
 
 
 

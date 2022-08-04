@@ -12,27 +12,23 @@
 % Edited in MATLAB R2021b
 
 close all; clear; clc;
-
 %% Variables
-% mkdir 'Figures' % niet nodig, deze figuren worden niet bekeken 
-mkdir 'Calculations'
 FS_S = 60000;        % [Hz] sampling frequency stimulation
-FS_P = 60000;      % [Hz] sampling frequency pressure  
+FS_P = 60000;           % [Hz] sampling frequency pressure  
 
-% pres(2,nn) = {((1.13*(pres{1,nn}))-31.4)/au} ;
+CAL = -27.7876 ;  % you can also input a vector of values? 
 
-% DS_FACT = 2;            % Downsampling factor
-F_FILT = 18;            % [Hz] low-pass filter frequency for pressure 
-
-%% Execute 
-[STIM,PRES,DIR_OUT] = loadModify(F_FILT,FS_P,FS_S) ;
-%%
+%% Step 1. 
+[STIM,PRES] = loadModify(FS_P,FS_S,CAL) ;
+%% Step 2a. 
 [INT_STIM] = stimDetection(STIM) ; 
-%% 
+%% Step 2b. 
 [INT_PRES] = contDetection(PRES) ; 
-%% 
+%% Step 3a. 
 [CHCK_STIM] = manualCheck(INT_STIM,'stimulation') ; 
-%%
-[CHCK_PRES] = manualCheck(INT_PRES,'pressure') ; 
-%% 
-[OUT] = calcExport(CHCK_PRES, 'pressure') ; 
+%% Step 3b. 
+[CHCK_PRES] = manualCheck(INT_PRES,'pressure') ;
+%% Step 4a. 
+[T,Tav_pres,Tav_stim] = calcExport(CHCK_STIM,CHCK_PRES) ; 
+%% Step 4b. 
+%[OUT_S] = calcExport(CHCK_STIM,CHCK_PRES) ; 

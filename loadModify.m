@@ -1,14 +1,14 @@
-function [stim,pres,dir_outp] = loadModify(f_filt,fs_p,fs_s)
+function [stim,pres] = loadModify(fs_p,fs_s,cal)
 % Data is loaded into cells and modified. 
-% %   Y. (Yasmin) Ben Azouz
+%   Y. (Yasmin) Ben Azouz
 %   NetID: 4559843
 %   July 2022 
 %   Only one file can be selected at a time 
+%   deleted dir outp
 
 %% Variables
-% fs_new = fs_p / ds_fact;
 au = 10 ;   % Conversion factor AU to cmH2O
-
+f_filt = 18;    % [Hz] low-pass filter frequency for pressure 
 
 %% Select input file and load data 
 [name,path] = uigetfile('*.*', ...
@@ -23,16 +23,34 @@ else
    data = importdata(fullfile(path,name{1,1})) ;
 end
 %% Select output directory 
-dir_outp = uigetdir('', 'Select OUTPUT directory');
+% dir_outp = uigetdir('', 'Select OUTPUT directory');
+if ~exist('Calculations', 'dir')
+   mkdir 'Calculations'
+end
 
 %% Modify data 
 % Stimulation 
 num_stim = size(data.stimulation,2) ; % amount of stimulation measurements
+if num_stim ==0 
+    error('Your stimulation data is empty. Check your data files.')
+end 
 stim = cell(2,num_stim) ;
 for n = 1:num_stim
     stim(1,n) = {data.stimulation(:,n)} ; 
     stim(2,n) = stim(1,n) ; %no adjustments to data 
     stim(3,n) = {fs_p} ; 
+
+    mod = stim{2,n} ; 
+
+    t = (0:numel(mod)-1)/fs_s ;
+
+    % Plot
+    figure 
+    plot(t,mod, '-', 'LineWidth', 1, 'Color','#80B3FF'); 
+    title(strcat('Stimulation channel ',num2str(n))); 
+    xlabel('Time [s]', 'FontSize', 10);
+    ylabel('Stimulation Voltage [AU]','FontSize', 10);
+    hold on 
 
     % Ask what to display
     answer = questdlg(strcat('Do you want to display stimulation channel ' ...
@@ -46,10 +64,14 @@ for n = 1:num_stim
             stim(:,n) = [] ; 
             disp(strcat('stimulation channel ', num2str(n),' will NOT be displayed.'))
     end   
+    close 
 end 
        
-% pressure 
+% Pressure 
 num_pres = size(data.pressure,2) ; % amount of pressure measurements 
+if num_pres ==0                     % error message, empty files 
+    error('Your pressure data is empty. Check your data files.')
+end 
 pres = cell(2,num_pres) ; % first raw, second modified 
 for nn = 1:num_pres
     pres(1,nn) = {data.pressure(:,nn)} ; 
@@ -62,14 +84,23 @@ for nn = 1:num_pres
     pres(2,nn) = {filtfilt(net_filter,pres{1,nn})} ; 
 
     % Calibration
-    pres(2,nn) = {((1.13*(pres{2,nn}))-31.4)/au} ;
+    pres(2,nn) = {((1.13*pres{2,nn}))/au} ; % -31.4
+%     pres(2,nn) = {pres{2,nn}+cal} ;
+%     pres(2,nn) = {pres{2,nn}/0.113}; 
 
     % Lowpass filter
     [b,a]=butter(4,f_filt/(0.5*fs_p));  
     pres(2,nn) = {filtfilt(b,a,pres{2,nn})};
 
-    % Downsampling
-    % pres(2,nn) = {downsample(pres{2,nn}, ds_fact)};    
+    mod = pres{2,nn} ; 
+    t = (0:numel(mod)-1)/fs_p ;
+    % Plot
+    figure 
+    plot(t,mod, '-', 'LineWidth', 1, 'Color','#80B3FF');
+    title(strcat('pressure channel ',num2str(nn))); 
+    xlabel('Time [s]', 'FontSize', 10);
+    ylabel('Pressure [cmH_2O]','FontSize', 10);
+    hold on 
 
     % Ask what to display
     answer = questdlg(strcat('Do you want to display pressure channel ' ...
@@ -83,5 +114,6 @@ for nn = 1:num_pres
             pres(:,nn) = [] ;  % if is is the last cell line, they will ve removed 
             disp(strcat('pressure channel ', num2str(nn),' will NOT be displayed.'))
     end 
+    close 
 end 
 

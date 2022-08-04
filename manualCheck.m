@@ -8,7 +8,6 @@ function [newdata] = manualCheck(olddata,tpe)
 % tpe = type of data, pressure or stimulation 
 % olddata = data with automatically located 
 
-
 data = olddata ; 
 
 for i = 1:size(data,2)   % loop over all measurements included 
@@ -24,6 +23,7 @@ if ~isempty(raw) == 1
         % figure  
             figure 
             plot(t, mod, '-', 'LineWidth', 1, 'Color','#80B3FF'); % mod data 
+            xlabel('Time [s]', 'FontSize', 10);
             hold on
             set(gcf, 'Position',  [200, 200, 1000, 400])      % make a rectangular figure
 
@@ -33,6 +33,7 @@ if ~isempty(raw) == 1
                % determine name for pop-ups 
                if (isequal('stimulation',tpe)) == 1 
                     ylabel('Stimulation Voltage [AU]','FontSize', 10); 
+                    
                     if ii == 1 
                         name = ' STIMULATION START' ; 
                     elseif ii == 2 
@@ -40,7 +41,7 @@ if ~isempty(raw) == 1
                     end 
                 elseif (isequal('pressure',tpe)) == 1
                     ylabel('Pressure [cmH_2O]','FontSize', 10);
-        
+                    
                     if ii == 1 
                         name = ' CONTRACTION ONSET' ; 
                     elseif ii == 2 
@@ -106,31 +107,23 @@ if ~isempty(raw) == 1
                     end 
                end 
                 
+                title(strcat('Labelling',name)); 
                 xline((pnt(:,ii)/fs), 'LineWidth',2);   % lines 
                 hold on; % hold state on 
     
-                title(strcat('Labelling',name)); 
-                   
-                xlabel('Time [s]', 'FontSize', 10);
-    
-                % Change, keep or delete  
+                % Keep or delete  
                 for iii=1:numel(pnt(:,ii))
                     xline((pnt(iii,ii)/fs), 'b', 'LineWidth',2)
             
                     answer = questdlg(strcat('Is the blue line a' ...
                         ,name,'?'), ...
-                        'Change, keep or delete?', ...
+                        'Keep or delete?', ...
                         'Keep','Delete', 'Leave Selection', 'Keep');
                     % Handle response
                     switch answer
                         case 'Keep'
                             xline((pnt(iii,ii)/fs), 'g',name, 'LineWidth', 2)
                             disp(strcat('Kept',name))
-%                         case 'Change'
-%                             xline((pnt(iii,ii)/fs), 'r', 'LineWidth',2)
-%                             [pnt(iii,ii), ~] = ginput(1); 
-%                             xline((pnt(iii,ii)/fs), 'g',name, 'LineWidth', 2)
-%                             disp(strcat('Changed',name))
                         case 'Delete'
                             xline((pnt(iii,ii)/fs), 'r', 'LineWidth', 2)
                             pnt(iii,ii) = 0;
@@ -205,8 +198,70 @@ if ~isempty(raw) == 1
 else 
     man = [] ; 
 end 
-data(4,i) = {man} ; 
-end 
-newdata = data ; 
+
+%% Get intervals 
+
+    time = man ; 
+    t2 = linspace(1,size(mod,1),size(mod,1)); 
+    if ~isempty(raw) % measurement channel used
+
+        %% Get intervals
+        num = size(time,1); 
+        if time(1,1) == 0   % correct for fs to time mistake earlier in code 
+            time(1,1) = 1 ;  % zero does not exist in fs domain and cannot be used for indexing 
+        end 
+
+        % Intervals
+        if num > 1
+            if time(1,1) == 1                   % start activation
+                startint = time(:,2)+1 ;        % act end = int start 
+                endint = vertcat(time(2:end,1)-1,t2(end)) ; % act start = int end  
+                if time(end) == t2(end)          % end with act 
+                    startint = time(1:end-1,2)+1 ; % act end = int start 
+                    endint = time(2:end,1)-1 ;  % act start = int end 
+                end 
+            elseif time(end) == t2(end)          % end with act
+                startint = vertcat(1, time(1:end-1,2)+1) ; % act end = int start 
+                endint = time(:,1)-1 ;          % act start = int end  
+            else % no partial activation
+                startint = vertcat(1, time(:,2)+1) ; % act end = int start 
+                endint = vertcat(time(:,1)-1, t2(end)) ; % act start = int end              
+            end 
+        elseif num == 1 % single %(:,x) should not be necessary really >> add error? In case it is larger?
+            if time(1,1) == 1 % partial at start 
+                if (time(end)==t2(end))==1 || sum(sum(time))==1 % full or none
+                   startint = []; 
+                   endint = [] ; 
+                else 
+                   startint = time(:,2) ; 
+                   endint = t2(end) ; 
+                end 
+            elseif time(1,2) == t2(end) % partial at end 
+                startint = 1 ; 
+                endint = time(:,1)-1 ; 
+            else % no partial
+                startint = vertcat(1, time(:,2)-1) ; 
+                endint = vertcat(time(:,1)+1,t2(end)) ; 
+            end 
+        end 
+       
+        act = horzcat(ones(size(time,1),1),time) ;
+        int = horzcat(zeros(size(startint,1),1), startint,endint) ;
+        
+        ca = vertcat(act,int) ; 
+        [~,idx] = sort(ca(:,2));            % sort just the first column
+        mat = ca(idx,:);                    % sort the whole matrix using the sort indices
+    elseif isempty(raw)
+        continue ; 
+    else 
+        %error message? your raw data i contains an abnormal value. Klick
+        %... in the workspace, then click the first row of the ith column.
+        %What do you see? 
+    end 
+    data(5,i) = {mat} ; 
 end
+newdata = data ;
+end  
+
+
 

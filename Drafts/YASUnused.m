@@ -1,3 +1,19 @@
+%% 04.08.2022 
+
+%                 if f <= size(tme,1) % located on the left side which means start
+%                     between(f,1) = tme(f)/fs ; start(1) = 0; % eind stim - start con
+%                     between(f,2) = mat(ff,3)/fs ; 
+% 
+%                 elseif f > size(tme,1) % located on the right side which means contraction end  
+%                     between(f,2) = tme(f)/fs ; 
+%                     between(f,1) =  mat(ff,2)/fs ; start(1) = 0 ;  % eind con - start stim 
+%                 end 
+%                 condur(ff,1) = stop-start ; 
+%                 
+%                 mask = start <= t & t <= stop ; %create 7x7200000 array with masks 
+%                 modnew = repmat(abs(mod),1,size(start,1))' ; %create 7x7200000 matrix with mod 
+%                 durint = trapz(modnew.*mask,2) ;   % 7. integral: integrate over rows 
+
 %% Plotting and according stimulations LOS - date: 18.07.2022 
 t_stim = (0:numel(stim)-1)/(fs_stim); % Time vector >> put inside cell with data. 
 

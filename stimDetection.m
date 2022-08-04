@@ -58,7 +58,7 @@ for i = 1:size(stim_in,2)
         end 
         int_stim = {[startstim; endstim]} ; % put inside cell to move 
     
-    elseif m > 10 % stim present 
+    elseif m > 10 % stim present >> standard deviation high enough for stimulation
     
         if isempty(locs) == 1 % cont stim 
             startstim = 1 ;    % beginning stim is one 
@@ -72,7 +72,7 @@ for i = 1:size(stim_in,2)
                 endstim = zeros((length(locs)+1)/2) ;
     
                 for l = 1:length(locs)
-                    % Take range of 1000? 
+                    % Take range of 1000 for window 
                     left = abs(stim(locs(l)-1000:locs(l))) ; 
                     right = abs(stim(locs(l):locs(l)+1000)) ; 
                     for ll = 1:(length(locs)+1)/2
@@ -100,13 +100,13 @@ for i = 1:size(stim_in,2)
                     startstim = NaN ; 
                     endstim = NaN ; 
                 end 
-        % even locs > stim started and ended 
+            % even locs > stim started and ended 
             elseif (rem(length(locs),2) == 0) ==1
                 startstim = zeros(length(locs)/2) ; 
                 endstim = zeros(length(locs)/2) ;
     
                 for l = 1:length(locs)
-                    % Take range of 1000? 
+                    % Take range of 1000 for window  
                     left = abs(stim(locs(l)-1000:locs(l))) ; 
                     right = abs(stim(locs(l):locs(l)+1000)) ; 
                     for ll = 1:length(locs)/2
@@ -117,9 +117,6 @@ for i = 1:size(stim_in,2)
                         else 
                             startstim = NaN ; 
                             endstim = NaN ; 
-    
-    % DIS IS DIT HOE IK DIT WIL WEERGEVEN?? 
-                            disp 'The data cannot pass line 99 of the stimDetection.m file. You will create the start and end of stimulation manually.'
                         end 
                     end 
                 end 
@@ -136,6 +133,7 @@ for i = 1:size(stim_in,2)
         int_stim = {NaN(1,2)}; 
     end 
 stim_out(4,i) = int_stim ; 
+end 
 % end of function
 end 
 

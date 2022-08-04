@@ -20,40 +20,36 @@ for i = 1:size(pres,2) % loop over pressure channels
         
         % Find contraction peaks 
         p_peaks = smoothdata(mod,'SmoothingFactor', 0.01);
-        [pks_max, locs_max] = findpeaks(p_peaks, fs, 'MinPeakDistance', ...
+        [~, locs_max] = findpeaks(p_peaks(fs:t(end)-fs,1), 'MinPeakDistance', ...       % (1:t(end)-1) to remove peaks in first and last seconds
             5, 'MinPeakProminence',1);
         
         % Find the valleys 
         p_valleys = smoothdata(mod,'SmoothingFactor', 0.0005);
-        [~, locs_min] = findpeaks(-p_valleys, fs, 'MinPeakDistance', ...
+        [~, locs_min] = findpeaks(-p_valleys(fs:t(end)-fs,1), 'MinPeakDistance', ...
             4, 'MinPeakProminence', 0.3);  
         
-        % Remove peaks that occur in first and last second of signal
-        a = find(locs_max < 1);
-        b = find(locs_max > (t(end) - 1));
-        
-        locs_max(a) = [];
-        locs_max(b) = [];
-        pks_max(a) = [];
-        pks_max(b) = [];
-        
         % Determine start times per contractions 
-        startcont = zeros(length(pks_max),1); %preallocate 
-        for ii=1:length(pks_max) 
+        startcont = zeros(length(locs_max),1); %preallocate 
+        for ii=1:length(locs_max) 
            if sum(locs_min < locs_max(ii)) ~= 0 
                low_locs = locs_min(locs_min < locs_max(ii));
                [~,idx]=min(abs(low_locs-locs_max(ii)));
                minVal=low_locs(idx);
                startcont(ii) = minVal ;
            else 
-               locs_max(ii) = NaN ; 
+               locs_max(ii) = NaN ;
+               startcont(ii) = NaN ; 
            end  
            endcont = rmmissing(locs_max) ; 
            startcont = nonzeros(startcont) ; 
         end
-        int_cont = {[startcont*fs endcont*fs]} ;
-        pres_out(4,i) = int_cont ; 
+        int = {[startcont endcont]} ; 
+    elseif isempty(pres{1,i})==1 
+        int = {[]} ; 
+    else 
+        int = {NaN(1,2)};
     end
+    pres_out(4,i) = int ;
 end 
 end
 
