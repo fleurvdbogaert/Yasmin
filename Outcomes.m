@@ -96,8 +96,6 @@ avslope_s = avabsheight_s/avdur_s ;
         avstopr_c, avstopr_s, ...
         avabsheight_c, avabsheight_s, ...
         avslope_c, avslope_s) ; 
-
-
 elseif isempty(mat)
     T = [] ; 
     Tav_pres = [] ; Tav_stim = [] ; 

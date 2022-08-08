@@ -198,6 +198,7 @@ if ~isempty(raw) == 1
 else 
     man = [] ; 
 end 
+data(4,i) = {man} ; 
 
 %% Get intervals 
 

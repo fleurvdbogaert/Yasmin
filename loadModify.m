@@ -1,4 +1,4 @@
-function [stim,pres] = loadModify(fs_p,fs_s,cal)
+function [stim,pres,name] = loadModify(fs_p,fs_s)
 % Data is loaded into cells and modified. 
 %   Y. (Yasmin) Ben Azouz
 %   NetID: 4559843
@@ -23,7 +23,6 @@ else
    data = importdata(fullfile(path,name{1,1})) ;
 end
 %% Select output directory 
-% dir_outp = uigetdir('', 'Select OUTPUT directory');
 if ~exist('Calculations', 'dir')
    mkdir 'Calculations'
 end
@@ -77,16 +76,16 @@ for nn = 1:num_pres
     pres(1,nn) = {data.pressure(:,nn)} ; 
     pres(3,nn) = {fs_s} ; 
 
+    % Calibration
+    pres(2,nn) = {((pres{1,nn}+31.4)/1.13)/au} ; % -31.4
+%     pres(2,nn) = {pres{2,nn}+cal} ;
+%     pres(2,nn) = {pres{2,nn}/0.113}; 
+
     % Notch filter 50Hz
     net_filter = designfilt('bandstopiir','FilterOrder',2, ...                       % create notch filter for 50 Hz (48-52 Hz)
                        'HalfPowerFrequency1',49.9,'HalfPowerFrequency2', ...
                        50.1,'DesignMethod','butter','SampleRate',fs_p);  
-    pres(2,nn) = {filtfilt(net_filter,pres{1,nn})} ; 
-
-    % Calibration
-    pres(2,nn) = {((1.13*pres{2,nn}))/au} ; % -31.4
-%     pres(2,nn) = {pres{2,nn}+cal} ;
-%     pres(2,nn) = {pres{2,nn}/0.113}; 
+    pres(2,nn) = {filtfilt(net_filter,pres{2,nn})} ; 
 
     % Lowpass filter
     [b,a]=butter(4,f_filt/(0.5*fs_p));  

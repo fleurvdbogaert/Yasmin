@@ -7,11 +7,15 @@
 % 1. Deep Learning Toolbox (dividerand function)
 % 2. Fixed-point designer 
 %% 1.   Load data 
-load data2 
+%load data2 
 data = data2 ; 
 raw = data(2,:) ; 
 lab = data(3,:) ; 
 
+for i = 1:size(raw,2)
+    raw(1,i) = {raw{1,i}'} ; 
+end 
+  
 %% 2.   Normalize data using z-score
 data(4,:) = cell(size(data2(1,:))) ; 
 nor = raw ; 
@@ -55,15 +59,17 @@ Yval = lab3(valIdx)';
 Ytest = lab3(testIdx)';
 %%
 Ytrain = cellfun(@(C) reshape(C, 1, []), Ytrain, 'UniformOutput',false);
+Yval = cellfun(@(C) reshape(C, 1, []), Yval, 'UniformOutput',false);
+Ytest = cellfun(@(C) reshape(C, 1, []), Ytest, 'UniformOutput',false);
 %% 4.   Divide each sequence into parts of equal length A, each fragment being 
 %       shifted a preset number of samples from the previous fragment
 
-clear Xequal_train; clear Yequal_train; clear Xequal_test; clear Yequal_test;
-shift_train = 1;
-shift_test = 1;
-[Xequal_train, Yequal_train] = divide(Xtrain, Ytrain, A, shift_train);
-[Xequal_val, Yequal_val] = divide(Xval, Yval, A, shift_test);
-[Xequal_test, Yequal_test] = divide(Xtest, Ytest, A ,shift_test);
+% clear Xequal_train; clear Yequal_train; clear Xequal_test; clear Yequal_test;
+% shift_train = 1;
+% shift_test = 1;
+% [Xequal_train, Yequal_train] = divide(Xtrain, Ytrain, A, shift_train);
+% [Xequal_val, Yequal_val] = divide(Xval, Yval, A, shift_test);
+% [Xequal_test, Yequal_test] = divide(Xtest, Ytest, A ,shift_test);
 %% 5. train
 numSequence = size(raw2{1,1},1);
 numHiddenUnits = 60;
@@ -74,9 +80,12 @@ MiniBatchSize = 30;
 layers = [...
     sequenceInputLayer(numSequence,'Normalization', 'zscore')
     bilstmLayer(numHiddenUnits,'OutputMode','sequence')
-    fullyConnectedLayer(3)
+    % aantal convolutie lagen, niet te breed 
+    % van kleinere naar grotere conv ivm begin en eind cont 
+    % niet te veel units - stuk of 10 + lagen voor fow (geheugen) 
+    fullyConnectedLayer(2)
     softmaxLayer
-    classificationLayer];
+    classificationLayer]; 
 
 options = trainingOptions('adam', ...
     'MaxEpochs',MaxEpochs, ...
@@ -87,7 +96,7 @@ options = trainingOptions('adam', ...
     'GradientThreshold',1, ...
     'Plots','training-progress',...
     'shuffle','every-epoch',...
-    'SequenceLength',500,...
+    'SequenceLength',7200,...
     'Verbose',0,...
     'ValidationData',{Xval,Yval},...
     'ValidationFrequency',50,...

@@ -14,12 +14,11 @@
 close all; clear; clc;
 %% Variables
 FS_S = 60000;        % [Hz] sampling frequency stimulation
-FS_P = 60000;           % [Hz] sampling frequency pressure  
-
-CAL = -27.7876 ;  % you can also input a vector of values? 
+FS_P = 60000;        % [Hz] sampling frequency pressure  
+%CAL = -27.7876 ;     % you can also input a vector of values? 
 
 %% Step 1. 
-[STIM,PRES] = loadModify(FS_P,FS_S,CAL) ;
+[STIM,PRES,FILE] = loadModify(FS_P,FS_S) ;
 %% Step 2a. 
 [INT_STIM] = stimDetection(STIM) ; 
 %% Step 2b. 
@@ -28,7 +27,5 @@ CAL = -27.7876 ;  % you can also input a vector of values?
 [CHCK_STIM] = manualCheck(INT_STIM,'stimulation') ; 
 %% Step 3b. 
 [CHCK_PRES] = manualCheck(INT_PRES,'pressure') ;
-%% Step 4a. 
-[T,Tav_pres,Tav_stim] = calcExport(CHCK_STIM,CHCK_PRES) ; 
-%% Step 4b. 
-%[OUT_S] = calcExport(CHCK_STIM,CHCK_PRES) ; 
+%% Step 4. 
+[T,Tav_pres,Tav_stim] = calcExport(CHCK_STIM,CHCK_PRES,FILE) ; 

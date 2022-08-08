@@ -29,21 +29,30 @@ for i = 1:size(pres,2) % loop over pressure channels
             4, 'MinPeakProminence', 0.3);  
         
         % Determine start times per contractions 
-        startcont = zeros(length(locs_max),1); %preallocate 
-        for ii=1:length(locs_max) 
-           if sum(locs_min < locs_max(ii)) ~= 0 
+     startcont = zeros(size(locs_max)); %preallocate   
+     for ii=1:length(locs_max) 
+       if sum(locs_min < locs_max(ii)) ~= 0 
                low_locs = locs_min(locs_min < locs_max(ii));
                [~,idx]=min(abs(low_locs-locs_max(ii)));
                minVal=low_locs(idx);
                startcont(ii) = minVal ;
-           else 
-               locs_max(ii) = NaN ;
-               startcont(ii) = NaN ; 
-           end  
-           endcont = rmmissing(locs_max) ; 
-           startcont = nonzeros(startcont) ; 
-        end
-        int = {[startcont endcont]} ; 
+       end 
+     end 
+    if isempty(locs_max) && isempty(startcont) == 1 % cont stim 
+        startcont = NaN ;    % beginning stim is one 
+        endcont = NaN ;  % end stim is end 
+
+    else%if isempty(locs_max) && isempty(startcont) == 0
+         if size(locs_max,1) == size(startcont,1) 
+             endcont = locs_max ; 
+         elseif size(locs_max,1) > size(startcont,1) 
+             startcont = [1 startcont] ; 
+             endcont = locs_max ; 
+         elseif size(startcont,1)> size(locs_max,1)
+             endcont = [locs_max t(end)] ; 
+         end 
+    end 
+    int = {[startcont endcont]} ; 
     elseif isempty(pres{1,i})==1 
         int = {[]} ; 
     else 
