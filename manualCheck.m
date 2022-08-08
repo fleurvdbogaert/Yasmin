@@ -208,10 +208,13 @@ data(4,i) = {man} ;
 
         %% Get intervals
         num = size(time,1); 
-        if time(1,1) == 0   % correct for fs to time mistake earlier in code 
-            time(1,1) = 1 ;  % zero does not exist in fs domain and cannot be used for indexing 
-        end 
-
+        if time(1,1) && time(1,2) == 0   % correct for fs to time mistake earlier in code 
+            mat = [0 1 t2(end)] ; 
+        else
+            if time(1,1) == 0 
+                time(1,1) = 1 ;  % zero does not exist in fs domain and cannot be used for indexing
+            end 
+ 
         % Intervals
         if num > 1
             if time(1,1) == 1                   % start activation
@@ -252,6 +255,7 @@ data(4,i) = {man} ;
         ca = vertcat(act,int) ; 
         [~,idx] = sort(ca(:,2));            % sort just the first column
         mat = ca(idx,:);                    % sort the whole matrix using the sort indices
+        end 
     elseif isempty(raw)
         continue ; 
     else 
@@ -259,6 +263,7 @@ data(4,i) = {man} ;
         %... in the workspace, then click the first row of the ith column.
         %What do you see? 
     end 
+
     data(5,i) = {mat} ; 
 end
 newdata = data ;

@@ -142,6 +142,7 @@ if ~isempty(smat)
         
         %% All stimulations - outcomes  
 
+
         % Labels of intervals. 
         labels = Xs(1+smat(:,1))' ;  % 1. labels
         
@@ -168,6 +169,7 @@ if ~isempty(smat)
         smodnew = repmat(abs(pmod),1,size(sstartpres,1))' ; %create 7x7200000 matrix with mod 
         sintegral = trapz(smodnew.*smask,2) ;   % 7. integral: integrate over rows 
 %% Averages over all stimulations - outcomes  
+
         tot = 0 ; 
         sta = 0 ; 
         sto = 0 ; 

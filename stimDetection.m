@@ -42,21 +42,6 @@ for i = 1:size(stim_in,2)
         % re-calculate range 
     m = std(mov) ; 
     end 
-
-    fs = 60000 ; 
-    t = (0:numel(mov)-1)/(fs);
-    figure
-    subplot (2,1,1) ; plot(t,stim, '-', 'LineWidth', 1, 'Color','#80B3FF');
-    title('First channel stimulation of PelL _ 20kHz10V')
-    xlabel('Time [s]', 'FontSize', 10);
-    ylabel('Stimulation Voltage [AU]','FontSize', 10); 
-
-    subplot (2,1,2) ; plot(t,mov, '-', 'LineWidth', 1, 'Color','#80B3FF');
-    hold on ; plot(locs/fs,mov(locs),'r*') ; 
-    title('Moving standard deviation of PelL _ 20kHz10V')
-    xlabel('Time [s]', 'FontSize', 10);
-    ylabel('Absolute stimulation Voltage [AU]','FontSize', 10); 
-    hold on 
    
     % STIM OR NOSTIM
     if m < 10 % boundary for nostim range 
