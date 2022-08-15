@@ -208,7 +208,7 @@ data(4,i) = {man} ;
 
         %% Get intervals
         num = size(time,1); 
-        if time(1,1) && time(1,2) == 0   % correct for fs to time mistake earlier in code 
+        if sum(time(1,:)) == 0   % correct for fs to time mistake earlier in code 
             mat = [0 1 t2(end)] ; 
         else
             if time(1,1) == 0 

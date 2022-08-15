@@ -7,7 +7,7 @@
 % 1. Deep Learning Toolbox (dividerand function)
 % 2. Fixed-point designer 
 %% 1.   Load data 
-%load data2 
+load data2 
 data = data2 ; 
 raw = data(2,:) ; 
 lab = data(3,:) ; 

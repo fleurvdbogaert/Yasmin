@@ -134,7 +134,7 @@ for i = 1:size(stim_in,2)
     end 
     stim_out(4,i) = int_stim ;
     else 
-        stim_out(4,1) = {NaN(1,2)}; 
+    stim_out(4,1) = {NaN(1,2)}; 
     end 
 end 
 % end of function

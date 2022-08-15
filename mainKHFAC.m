@@ -28,4 +28,4 @@ FS_P = 60000;        % [Hz] sampling frequency pressure
 %% Step 3b. 
 [CHCK_PRES] = manualCheck(INT_PRES,'pressure') ;
 %% Step 4. 
-[T,Tav_pres,Tav_stim] = calcExport(CHCK_STIM,CHCK_PRES,FILE) ; 
+[T,Ts,Tav_pres,Tav_stim] = calcExport(CHCK_STIM,CHCK_PRES,FILE) ; 

@@ -1,4 +1,4 @@
-function [T,Tav_pres,Tav_stim] = calcExport(stim,pres,name)
+function [T,Ts,Tav_pres,Tav_stim] = calcExport(stim,pres,name)
 
 %% Get outcomes 
 for i = 1:size(stim,2) % amount of channels used stimulation 
@@ -14,7 +14,7 @@ for i = 1:size(stim,2) % amount of channels used stimulation
 if ~isempty(smat)
     dir = strcat(pwd,'/Calculations') ; 
     file = name{1,1}; 
-    filename = sprintf('%s/Stim%d%s%s.xlsx', dir,i,file,datestr(now,'yyyymmdd.HH:MM:ss')); % state filename of the output file
+    filename = sprintf('%s/Stim%d%s%s.xlsx', dir,i,file,datestr(now,'yyyymmdd_HH_MM_ss')); % state filename of the output file
          
     for ii = 1:size(pres,2) % amount of channels used pressure  
         pmod = pres{2,ii} ; 
@@ -69,36 +69,36 @@ if ~isempty(smat)
                     %contract(ff,1) = (round(sum(sum(strt+stp))/2)) ; % automatically rounds up  
         
                     if strt+stp==0 %sum(bet,2)==0  % contraction start and end are not within the ranges  
-                        start(ff,1) = 1 ; 
-                        stop(ff,1)= 1 ;
+                        start(f,1) = 1 ; 
+                        stop(f,1)= 1 ;
                     elseif strt+stp==1 %sum(bet,2)==1 % contraction start or end is in the interval 
-                        start(ff,1) = tme(f,1)*strt ;   st = start(ff,1); 
-                        stop(ff,1) = tme(f,2)*stp ; so =stop(ff,1) ; 
+                        start(f,1) = tme(f,1)*strt ;   st = start(f,1); 
+                        stop(f,1) = tme(f,2)*stp ; so =stop(f,1) ; 
         
-                        st(start(ff,1)==0)=smat(ff,2) ;
-                        so(stop(ff,1)==0)=smat(ff,3) ; 
+                        st(start(f,1)==0)=smat(f,2) ;
+                        so(stop(f,1)==0)=smat(f,3) ; 
         
-                        start(ff,1) = st; 
-                        stop(ff,1) = so ; 
+                        start(f,1) = st; 
+                        stop(f,1) = so ; 
 
-                        inter(ff,:) = [tme(f,1) tme(f,2)]; 
+                        inter(f,:) = [tme(f,1) tme(f,2)]; 
         
                     elseif strt+stp==2 %sum(between,2)==2 % contraction start and end are within the interval 
-                        stop(ff,1) = tme(f,2) ; 
-                        start(ff,1) = tme(f,1) ; 
+                        stop(f,1) = tme(f,2) ; 
+                        start(f,1) = tme(f,1) ; 
                         
-                        inter(ff,:) = [tme(f,1) tme(f,2)];
+                        inter(f,:) = [tme(f,1) tme(f,2)];
                     end 
+                if ~isempty(tme)
+                    condur(1,1) = {[start stop]} ; % start and end times within stim interval 
+                    condur(1,2) = {[tme(f,1) tme(f,2)]} ; % start and end times of the whole contraction
+                    condur(1,3) = {stop-start} ; % duration of the contraction within interval 
+                    condur(1,4) = {inter(:,2)-inter(:,1)} ; %duration of whole contraction 
+                else 
+                    condur = [] ; 
+                end
             end 
         end 
-        if ~isempty(tme)
-            condur(1,1) = {[start stop]} ; % start and end times within stim interval 
-            condur(1,2) = {[tme(f,1) tme(f,2)]} ; % start and end times of the whole contraction
-            condur(1,3) = {stop-start} ; % duration of the contraction within interval 
-            condur(1,4) = {inter(:,2)-inter(:,1)} ; %duration of whole contraction 
-        else 
-            condur = [] ; 
-        end
         %% Individual contractions - Outcomes 
         Xp = {'no contraction', 'contraction'} ;
         Xs = {'no stimulation', 'stimulation'} ;
@@ -107,23 +107,23 @@ if ~isempty(smat)
         label = Xp(1+pmat(:,1))' ;  % 1. labels
         
         % Start time, end time and duration of the contraction
-        starttime = pmat(:,2)./pfs ; starttime(1,1) = 0;      % 2.start
-        stoptime = pmat(:,3)./pfs ;       % 3.stop
-        duration = stoptime-starttime ; % 4.duration
+        starttime = (pmat(:,2)-1)./pfs ; starttime(1,1) = 0;      % 2.start
+        peaktime = (pmat(:,3)-1)./pfs ;       % 3.stop
+        duration = peaktime-starttime ; % 4.duration
         
         % Start pressure, end pressure and absolute height of
         % contraction, all values are for one contraction. 
         startpres = pmod(round(pmat(:,2),0),1) ; 
-        stoppres = pmod(round(pmat(:,3),0),1) ; 
-        absheight = stoppres - startpres ; % 5.height
-        relheight = startpres./stoppres ;
-        avheight = (startpres+stoppres)/2 ; 
+        peakpres = pmod(round(pmat(:,3),0),1) ; 
+        absheight = peakpres - startpres ; % 5.height
+        %relheight = startpres./peakpres ;
+        %avheight = (startpres+peakpres)/2 ; 
         
         % Slope of the contraction per contraction
         slope = absheight./duration ;    % 6.slope 
         
         % Integral calculated per contraction
-        mask = startpres <= t & t <= stoppres ; %create 7x7200000 array with masks 
+        mask = pmat(:,2) <= t & t <= pmat(:,3) ; %create 7x7200000 array with masks 
         modnew = repmat(abs(pmod),1,size(startpres,1))' ; %create 7x7200000 matrix with mod 
         integral = trapz(modnew.*mask,2) ;   % 7. integral: integrate over rows 
         
@@ -132,42 +132,41 @@ if ~isempty(smat)
         numcon = sum(pmat(:,1)) ; % total number of contractions
         numstim = sum(smat(:,1)) ; %total number of stimulations 
         
-        avdurtot = sum((duration.*pmat(:,1)))/numcon ; % average contraction time 
-        avstartpres = sum(startpres.*pmat(:,1))/numcon ; % average start pressure contraction
-        abstoppres = sum(stoppres.*pmat(:,1))/numcon ; 
-        avabsheight = sum(absheight.*pmat(:,1))/numcon ;
-        avrelheight = sum(relheight.*pmat(:,1))/numcon ;
+        avdurtot = (sum(duration.*pmat(:,1)))/numcon ; % average contraction time 
+        avstartpres = (sum(startpres.*pmat(:,1)))/numcon ; % average start pressure contraction
+        avpeakpres = (sum(peakpres.*pmat(:,1)))/numcon ; 
+        avabsheight = (sum(absheight.*pmat(:,1)))/numcon ;
+        %avrelheight = (sum(relheight.*pmat(:,1)))/numcon ;
         
-        avslope = sum(slope.*pmat(:,1))/numcon ;    % 6.slope 
+        avslope = (sum(slope.*pmat(:,1)))/numcon ;    % 6.slope 
         
         %% All stimulations - outcomes  
-
 
         % Labels of intervals. 
         labels = Xs(1+smat(:,1))' ;  % 1. labels
         
         poi = condur{:,1} ; 
         % Start time, end time and duration of the contraction
-        sstarttime = poi(:,1)./sfs ; starttime(1,1) = 0;      % 2.start
-        sstoptime = poi(:,2)./sfs ;       % 3.stop
-        sduration = sstoptime-sstarttime ; % 4.duration
+        stim_starttime = ((poi(:,1)-1)./sfs)' ; starttime(1,1) = 0;      % 2.start
+        stim_peaktime = ((poi(:,2)-1)./sfs)' ;       % 3.stop
+        stim_duration = (stim_peaktime-stim_starttime)' ; % 4.duration
         
         % Start pressure, end pressure and absolute height of
         % contraction, all values are for one contraction.
         
-        sstartpres = smod(round(poi(:,1),0),1) ; 
-        sstoppres = smod(round(poi(:,2),0),1) ; 
-        sabsheight = sstoppres - sstartpres ; % 5.height
-        srelheight = sstartpres./sstoppres ;
-        savheight = (sstartpres+sstoppres)/2 ; 
+        stim_startpres = smod(round(poi(:,1),0),1)' ; 
+        stim_peakpres = smod(round(poi(:,2),0),1)' ; 
+        stim_absheight = (stim_peakpres - stim_startpres)' ; % 5.height
+        %stim_relheight = stim_startpres./stim_peakpres ;
+        %stim_avheight = (stim_startpres+stim_peakpres)/2 ; 
         
         % Slope of the contraction per contraction
-        sslope = sabsheight./sduration ;    % 6.slope 
+        stim_slope = (stim_absheight./stim_duration)' ;    % 6.slope 
         
         % Integral calculated per contraction
-        smask = sstartpres <= t & t <= sstoppres ; %create 7x7200000 array with masks 
-        smodnew = repmat(abs(pmod),1,size(sstartpres,1))' ; %create 7x7200000 matrix with mod 
-        sintegral = trapz(smodnew.*smask,2) ;   % 7. integral: integrate over rows 
+        smask = stim_startpres <= t & t <= stim_peakpres ; %create 7x7200000 array with masks 
+        smodnew = repmat(abs(pmod),1,size(stim_startpres,1))' ; %create 7x7200000 matrix with mod 
+        stim_integral = (trapz(smodnew.*smask,2))' ;   % 7. integral: integrate over rows 
 %% Averages over all stimulations - outcomes  
 
         tot = 0 ; 
@@ -184,10 +183,10 @@ if ~isempty(smat)
             end 
         end 
         
-        Averages = [{'contractions'};{'stimulations'}]; 
+        Averages = [{'contractions'};{'contractions during stimulations'}]; 
 
-        avdur_c = tot / numcon ; % average duration of whole con per contraction during stimulation
-        avdur_s = tot / numstim ; % average duration of contraction per stimulation
+        avdur_c = (tot / numcon)/pfs ; % average duration of whole con per contraction during stimulation
+        avdur_s = (tot / numstim)/pfs ; % average duration of contraction per stimulation
         Duration_average = [avdur_c; avdur_s] ; 
 
         avstapr_c = sta / numcon ; 
@@ -196,7 +195,7 @@ if ~isempty(smat)
         
         avstopr_c = sto / numcon ; 
         avstopr_s = sto / numstim ; 
-        Stoppres_average = [avstopr_c ; avstopr_s]; 
+        Peakpres_average = [avstopr_c ; avstopr_s]; 
         
         avabsheight_c = (sto-sta)/numcon ; 
         avabsheight_s = (sto-sta)/numstim ; 
@@ -212,40 +211,41 @@ if ~isempty(smat)
            if pmat(m,1)==1
                 mict = pmod(pmat(m,3):(pmat(m,3)+pfs)); 
                 Y = fft(mict);
-                P2 = abs(Y/pfs); % fs = length L 
-                P1 = P2(1:pfs/2+1);
+                L = length(mict);
+                P2 = abs(Y/L); % fs = length L 
+                P1 = P2(1:L/2+1);
                 P1(2:end-1) = 2*P1(2:end-1);
-                fnew = pfs*(0:(pfs/2))/pfs;
+                fnew = pfs*(0:(L/2))/L;
                 [~, loc] = findpeaks(P1, fnew, 'MinPeakHeight',0.5);
                 loc = round(loc);
                 freqs = 8:1:17;
                 c = sum(ismember(loc,freqs));
-               if c ~= 0
+               if c > 0
                    miction(m,1) = 1;
                end 
            end 
-       end 
+       end
         %% Tables 
             T =  table(label, ...
-                starttime, stoptime, duration,...
-                startpres, stoppres, absheight, relheight,avheight, ...
+                starttime, peaktime, duration,...
+                startpres, peakpres, absheight,... %relheight,avheight, ...
                 slope, integral, miction) ;
             Ts =  table(labels, ...
-                sstarttime, sstoptime, sduration,...
-                sstartpres, sstoppres, sabsheight, srelheight,savheight, ...
-                sslope, sintegral) ;
+                stim_starttime, stim_peaktime, stim_duration,...
+                stim_startpres, stim_peakpres, stim_absheight,... %stim_relheight,stim_avheight, ...
+                stim_slope, stim_integral) ;
             Tav_pres = table(numcon, numstim, ...
-                avdurtot, avstartpres, abstoppres, avabsheight, avrelheight, ...
+                avdurtot, avstartpres, avpeakpres, avabsheight,... %avrelheight, ...
                 avslope); 
             Tav_stim = table(Averages, Duration_average, ...
                 Startpres_average, ...
-                Stoppres_average, ...
+                Peakpres_average, ...
                 Absheight_average, ...
                 Slope_average) ; 
 
         rng1 = sprintf('A%d:H%d',size(pmat,1)+3,size(pmat,1)+4) ;
         rng2 = sprintf('A%d:J%d',size(pmat,1)+6,size(pmat,1)+8) ;
-        rng3 = sprintf('A%d:K%d',size(pmat,1)+10,size(pmat,1)+(10+size(poi,1))) ;
+        rng3 = sprintf('A%d:AG%d',size(pmat,1)+10,size(pmat,1)+(10+size(poi,1))) ;
 
         warning('off','MATLAB:xlswrite:AddSheet'); %optional
         writetable(T,filename,'Sheet',ii);
